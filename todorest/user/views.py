@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 # Create your views here.
 
 class NewView(APIView):
-    permission_classes = (IsAdminUser,)
+    # permission_classes = (IsAdminUser,)
     
     def post(self, request, format = None):
         user_name = request.POST.get("name")
@@ -34,16 +34,48 @@ class NewView(APIView):
 
 
 class DelView(APIView):
-    permission_classes = (IsAdminUser,)
+    permission_classes = (IsAuthenticated,)
     
     def post(self, request, format = None):
-        content = {'data': request.POST}
+        search_user = User.objects.filter(username = request.user).first()
+
+        result = False
+                
+        if(search_user):
+            search_user.delete()
+            result = True
+                
+        content = {'result': result}
+        
         return Response(content)
 
 
 class PswView(APIView):
-    permission_classes = (IsAdminUser,)
+    permission_classes = (IsAuthenticated,)
     
     def post(self, request, format = None):
-        content = {'data': request.POST}
+        search_user = User.objects.filter(username = request.user).first()
+
+        result = False
+                
+        if(search_user):
+            old_pass = request.POST.get("old_pass")
+            new_pass = request.POST.get("new_pass")
+            confirm_pass = request.POST.get("confirm_pass")
+            
+            assert(len(new_pass) > 0)
+            
+            # if(old_pass and new_pass and confirm_pass and (new_pass == confirm_pass)):
+            if(old_pass and new_pass and confirm_pass):
+                search_user.user_password = new_pass
+                search_user.save()
+                result = True
+                
+        content = {'result': result}
+        
         return Response(content)
+
+    
+    
+    
+    
