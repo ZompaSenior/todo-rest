@@ -2,7 +2,6 @@
 from django.urls.base import reverse
 from django.contrib.auth.models import User
 from django.test import TestCase
-from rest_framework.test import APIClient
 from rest_framework import status
 
 
@@ -10,7 +9,7 @@ class WrongLoginTest(TestCase):
     def setUp(self):
         self.url = reverse('token_obtain_pair')
         
-    def test_api_jwt(self):
+    def test_wrong_login(self):
         resp = self.client.post(self.url, {'username': 'user_not_present',
                                            'password': 'pass'}, format = 'json')
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -26,7 +25,7 @@ class NotAuthorizedLoginTest(TestCase):
         user.is_active = False
         user.save()
         
-    def test_api_jwt(self):
+    def test_not_authorized_login(self):
         resp = self.client.post(self.url, {'username': 'user_not_active',
                                            'password': 'pass'}, format = 'json')
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -42,7 +41,7 @@ class LoginTest(TestCase):
         user.is_active = True
         user.save()
 
-    def test_api_jwt(self):
+    def test_login(self):
     
         resp = self.client.post(self.url, {'username': 'user_active',
                                            'password': 'pass'}, format = 'json')

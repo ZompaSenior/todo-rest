@@ -1,13 +1,19 @@
-from django.http import HttpResponse
+"""Views to manage user subscription and profile."""
+
+# Std Import
+
+# Site-package Import
+from django.contrib.auth.models import User
+from django.db.utils import IntegrityError
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from django.contrib.auth.models import User
-# Create your views here.
+from rest_framework.permissions import IsAuthenticated
 
-class NewView(APIView):
-    # permission_classes = (IsAdminUser,)
+# Project Import
+
+class SubscribeView(APIView):
+    """View to manage new user subscription."""
     
     def post(self, request, format = None):
         user_name = request.POST.get("name")
@@ -15,12 +21,12 @@ class NewView(APIView):
         user_password = request.POST.get("password")
         user_staff = request.POST.get("staff")
         
+        result = False
+        result_info = ''
+        
         if(user_name and user_email and user_password):
-            search_user = User.objects.filter(username = user_name).first()
             
-            result = False
-            
-            if(not search_user):
+            try:
                 user = User.objects.create_user(user_name, user_email, user_password)
                 if(user_staff and user_staff.lower() == 'true'):
                     user.is_staff = True
@@ -28,12 +34,21 @@ class NewView(APIView):
                 user.save()
                 result = True
                 
-            content = {'result': result}
+            except IntegrityError:
+                result_info = "User already present"
+                
+        else:
+            result_info = "Not enough information"
+                
+        content = {'result': result,
+                   'result_info': result_info}
                         
-            return Response(content)
+        return Response(content)
 
 
-class DelView(APIView):
+class UnsubscribeView(APIView):
+    """View to manage user unsubscribe."""
+    
     permission_classes = (IsAuthenticated,)
     
     def post(self, request, format = None):
@@ -50,7 +65,9 @@ class DelView(APIView):
         return Response(content)
 
 
-class PswView(APIView):
+class ChangePasswordView(APIView):
+    """View to manage user password change."""
+    
     permission_classes = (IsAuthenticated,)
     
     def post(self, request, format = None):
@@ -63,10 +80,7 @@ class PswView(APIView):
             new_pass = request.POST.get("new_pass")
             confirm_pass = request.POST.get("confirm_pass")
             
-            assert(len(new_pass) > 0)
-            
-            # if(old_pass and new_pass and confirm_pass and (new_pass == confirm_pass)):
-            if(old_pass and new_pass and confirm_pass):
+            if(old_pass and new_pass and confirm_pass and (new_pass == confirm_pass)):
                 search_user.user_password = new_pass
                 search_user.save()
                 result = True
