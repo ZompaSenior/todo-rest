@@ -2,6 +2,7 @@
 
 # Std Import
 import base64
+import os
 import uuid
 
 # Site-package Import
@@ -16,6 +17,7 @@ from rest_framework.permissions import IsAuthenticated
 # Project Import
 from . import models
 from django.core.paginator import Paginator
+from django.forms.models import model_to_dict
 
 def base64_file(data):
     """Commodity function to decode uploaded image."""
@@ -24,6 +26,12 @@ def base64_file(data):
     _name, ext = _format.split('/')
         
     return ContentFile(base64.b64decode(_img_str), name='{}.{}'.format(uuid.uuid4(), ext))
+
+def task_to_dict(task):
+    task_dict = model_to_dict(task, exclude = ['image'])
+    task_dict['image'] = base64.b64encode(task.image.file.read())
+    
+    return task_dict
 
 class NewTaskView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -56,7 +64,8 @@ class NewTaskView(APIView):
             result_info = 'User not found'
                 
         content = {'result': result,
-                   'result_info': result_info}
+                   'result_info': result_info,
+                   'pk': task.pk if task else 0}
         
         return Response(content)
     
@@ -70,19 +79,22 @@ class EditTaskView(APIView):
         result = False
         result_info = ''
         
-        name = request.POST.get("name")
+        pk = request.POST.get("pk")
         
         if(user):
             with transaction.atomic():
-                task = user.tasks.filter(name = name).first()
+                task = user.tasks.filter(pk = pk).first()
                 
                 if(task):
-                    task.name = name
+                    task.name = request.POST.get("name")
+                    old_image_path = task.image.path
                     task.image = base64_file(request.POST.get("image"))
                     task.deadline = request.POST.get("deadline")
                     task.description = request.POST.get("description")
                     task.user = user
                     task.save()
+                    
+                    os.remove(old_image_path)
                     
                     result = True
                     
@@ -107,15 +119,16 @@ class DeleteTaskView(APIView):
         result = False
         result_info = ''
         
-        name = request.POST.get("name")
+        pk = request.POST.get("pk")
         
         if(user):
             with transaction.atomic():
-                task = user.tasks.filter(name = name).first()
+                task = user.tasks.filter(pk = pk).first()
                 
                 if(task):
-                    # TODO: Clear file content
+                    old_image_path = task.image.path
                     task.delete()
+                    os.remove(old_image_path)
                     
                     result = True
                     
@@ -149,6 +162,7 @@ class TaskListView(APIView):
                 tasks = user.tasks.order_by(order_field)
                 paginator = Paginator(tasks, page_size)
                 task_page = paginator.get_page(page_number)
+                
                 result = True
                 
             else:
@@ -159,7 +173,7 @@ class TaskListView(APIView):
                 
         content = {'result': result,
                    'result_info': result_info,
-                   'task_page': task_page}
+                   'task_page': [task_to_dict(task) for task in task_page]}
         
         return Response(content)
     
