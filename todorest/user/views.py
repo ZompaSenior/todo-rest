@@ -23,23 +23,29 @@ class SubscribeView(APIView):
         user_name = request.POST.get("name")
         user_email = request.POST.get("email")
         user_password = request.POST.get("password")
-        user_staff = request.POST.get("staff")
+        confirm_password = request.POST.get("confirm_password")
         
         result = False
         result_info = ''
         
         if(user_name and user_email and user_password):
-            
-            try:
-                user = User.objects.create_user(user_name, user_email, user_password)
-                if(user_staff and user_staff.lower() == 'true'):
-                    user.is_staff = True
-                     
-                user.save()
-                result = True
-                
-            except IntegrityError:
-                result_info = "User already present"
+            if(user_password == confirm_password):
+                try:
+                    user = User.objects.create_user(user_name, user_email, user_password)
+                    user.is_staff = False
+                         
+                    user.save()
+                    
+                    result = True
+                    
+                except IntegrityError:
+                    result_info = "User already present"
+                    
+                except Exception as e:
+                    result_info = f"Error: {e}"
+                    
+            else:
+                result_info = "Confirmation password does not match"
                 
         else:
             result_info = "Not enough information"
@@ -59,28 +65,38 @@ class UnsubscribeView(APIView):
         search_user = User.objects.filter(username = request.user).first()
 
         result = False
+        result_info = ''
                 
         if(search_user):
             user_id = search_user.id
-            search_user.delete()
-            
-            user_folder = PurePath(settings.MEDIA_ROOT, f'user_{user_id}')
-            
             try:
-                shutil.rmtree(user_folder)
+                search_user.delete()
                 
-                for root, dirs, files in os.walk(user_folder, topdown = False):
-                    for name in dirs:
-                        os.rmdir(os.path.join(root, name))
-
-                os.rmdir(user_folder)
+                user_folder = PurePath(settings.MEDIA_ROOT, f'user_{user_id}')
                 
-            except:
-                pass
+                try:
+                    shutil.rmtree(user_folder)
+                    
+                    for root, dirs, files in os.walk(user_folder, topdown = False):
+                        for name in dirs:
+                            os.rmdir(os.path.join(root, name))
+    
+                    os.rmdir(user_folder)
+                    
+                except:
+                    # TODO: A better management is required
+                    pass
             
-            result = True
+                result = True
+    
+            except Exception as e:
+                result_info = f"Error: {e}"
+            
+        else:
+            result_info = 'User not found'
                 
-        content = {'result': result}
+        content = {'result': result,
+                   'result_info': result_info}
         
         return Response(content)
 
@@ -94,18 +110,31 @@ class ChangePasswordView(APIView):
         search_user = User.objects.filter(username = request.user).first()
 
         result = False
+        result_info = ''
                 
         if(search_user):
-            old_pass = request.POST.get("old_pass")
-            new_pass = request.POST.get("new_pass")
-            confirm_pass = request.POST.get("confirm_pass")
+            old_password = request.POST.get("old_password")
+            new_password = request.POST.get("new_password")
+            confirm_password = request.POST.get("confirm_password")
             
-            if(old_pass and new_pass and confirm_pass and (new_pass == confirm_pass)):
-                search_user.user_password = new_pass
-                search_user.save()
-                result = True
+            if(old_password and new_password and confirm_password):
+                if(new_password == confirm_password):
+                    search_user.user_password = new_password
+                    try:
+                        search_user.save()
+                        result = True
+                        
+                    except Exception as e:
+                        result_info = f"Error: {e}"
+                    
+                else:
+                    result_info = "Confirmation password does not match"
                 
-        content = {'result': result}
+            else:
+                result_info = "Not enough information"
+                
+        content = {'result': result,
+                   'result_info': result_info}
         
         return Response(content)
 

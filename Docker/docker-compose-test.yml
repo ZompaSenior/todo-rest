@@ -1,0 +1,57 @@
+version: '3'
+
+services:
+  todorest_db:
+    container_name: todorest_db
+    image: postgres:14
+    restart: unless-stopped
+    expose:
+      - "${TODOREST_DB_PORT}"
+    volumes:
+      - /var/opt/todorest/db:/var/lib/postgresql/data
+      - /var/opt/todorest/backup:/var/lib/postgresql/backup
+    environment:
+      - POSTGRES_DB=${TODOREST_DB_NAME}
+      - POSTGRES_USER=${TODOREST_DB_USER}
+      - POSTGRES_PASSWORD=${TODOREST_DB_PASSWORD}
+    command: -p ${TODOREST_DB_PORT}
+  todorest:
+    container_name: todorest
+    build: .
+    image: todorest
+    command: /bin/ash -c "
+       python /usr/src/app/manage.py migrate --noinput
+       && python /usr/src/app/manage.py collectstatic --noinput
+       && (python /usr/src/app/manage.py createsuperuser --noinput || true) 
+       && pytest
+       "
+    volumes:
+      - ../todorest:/usr/src/app
+      - ../tests:/usr/src/test
+      - ${TODOREST_STATIC_ROOT}:/var/todorest/static
+      - ${TODOREST_MEDIA_ROOT}:/var/todorest/media
+    # network:
+    # - host
+    environment:
+      # Django Superuser Admin
+      - DJANGO_SUPERUSER_PASSWORD=${TODOREST_SUPER_USER_PASSWORD}
+      - DJANGO_SUPERUSER_USERNAME=${TODOREST_SUPER_USER_USERNAME}
+      - DJANGO_SUPERUSER_EMAIL=${TODOREST_SUPER_USER_EMAIL}
+      
+      # TODOREST Database Parameters
+      - DB_NAME=${TODOREST_DB_NAME}
+      - DB_USER=${TODOREST_DB_USER}
+      - DB_HOST=todorest_db
+      - DB_PORT=${TODOREST_DB_PORT}
+      - DB_PASSWORD=${TODOREST_DB_PASSWORD}
+      
+      # Static files position
+      - STATIC_ROOT=/var/todorest/static/
+      - MEDIA_ROOT=/var/todorest/media/
+    expose:
+      - ${TODOREST_DB_PORT}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - todorest_db
+      

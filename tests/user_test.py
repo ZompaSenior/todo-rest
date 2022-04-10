@@ -13,7 +13,8 @@ class SubscribeTest(APITestCase):
     def test_subscribe(self):
         resp = self.client.post(self.url, {'name': 'user',
                                            'email': 'user@foo.com',
-                                           'password': 'pass'})
+                                           'password': 'pass',
+                                           'confirm_password': 'pass'})
 
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertTrue('result' in resp.data)
@@ -71,9 +72,9 @@ class ChangePasswordTest(APITestCase):
         access = resp.data['access']
 
         self.client.credentials(HTTP_AUTHORIZATION = 'Bearer ' + access)
-        resp = self.client.post(self.url_changepassword, {'old_pass': 'pass',
-                                                          'new_pass': 'newpass',
-                                                          'confirm_pass': 'newpass'})
+        resp = self.client.post(self.url_changepassword, {'old_password': 'pass',
+                                                          'new_password': 'newpass',
+                                                          'confirm_password': 'newpass'})
         
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertTrue('result' in resp.data)

@@ -1,20 +1,30 @@
 # todo-rest
 TODO Application REST API
 
-## Database
+## Configuration
 
-As database PostgreSQL 14 is used.
+To run the project Docker Compose is used, and some stuff have to be configured.
 
-Here some instruction for Ubuntu, in order to install the last version, and some support library for Python:
+Make a copy of the file `Docker/.env_template` in the same directory, named `.env` anc customize the content.
+
+## Production
+
+In order to run the project in Production mode use the following command from the Docker folder:
 
 ```
-sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-sudo apt-get update
-sudo apt-get -y install postgresql postgresql-contrib
-sudo apt-get install libpq-dev python3-dev
+docker compose --file docker-compose.yml up --build
 ```
 
-Here the link to the official documentation for more information or other OS:
+## Test
 
-[PostgreSQL Download](https://www.postgresql.org/download/)
+In order to run the project in Production mode use the following command from the Docker folder:
+
+```
+docker compose --file docker-compose-test.yml up --build
+```
+
+## Future implementations
+
+- Prepare enhanced documentation with Sphinx (comment already predisposed)
+- Implement a custom Validator (at the moment a very light validation is present)
+- Implement a custom Serializer (at the moment and manual serialization is present)

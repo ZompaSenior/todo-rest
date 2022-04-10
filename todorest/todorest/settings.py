@@ -126,6 +126,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 
+STATIC_ROOT = os.environ['STATIC_ROOT']
 MEDIA_ROOT = os.environ['MEDIA_ROOT']
 
 

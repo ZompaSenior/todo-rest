@@ -109,9 +109,9 @@ class TaskTest(APITestCase):
         pk_list = []
         for i in range(1000):
             self.client.credentials(HTTP_AUTHORIZATION = 'Bearer ' + access)
-            resp = self.client.post(self.url_newtask, {'name': f'Prova_{i}',
+            resp = self.client.post(self.url_newtask, {'name': f'Test_{i}',
                                                        'deadline': datetime.now(),
-                                                       'description': f'Prova di task {i}',
+                                                       'description': f'Task test {i}',
                                                        'image': test_file_1})
 
             self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -119,22 +119,27 @@ class TaskTest(APITestCase):
             self.assertTrue(resp.data['result'])
             pk_list.append(resp.data['pk'])
         
+        request_parameters = {'order_field': 'name',
+                              'page_size': PAGE_SIZE,
+                              'page_number': 0,
+                              'image_format': 'url'}
+        
         for p in range(1, int(1000 / PAGE_SIZE), 1):
             self.client.credentials(HTTP_AUTHORIZATION = 'Bearer ' + access)
-            resp = self.client.post(self.url_tasklist, {'order_field': 'name',
-                                                          'page_size': PAGE_SIZE,
-                                                          'page_number': p})
+            request_parameters['page_number'] = p
+            resp = self.client.post(self.url_tasklist, request_parameters)
             
             self.assertEqual(resp.status_code, status.HTTP_200_OK)
             self.assertTrue('result' in resp.data)
             self.assertTrue(resp.data['result'])
             self.assertTrue('task_page' in resp.data)
+            
+        request_parameters['order_field'] = 'deadline'
         
         for p in range(1, int(1000 / PAGE_SIZE), 1):
             self.client.credentials(HTTP_AUTHORIZATION = 'Bearer ' + access)
-            resp = self.client.post(self.url_tasklist, {'order_field': 'deadline',
-                                                          'page_size': PAGE_SIZE,
-                                                          'page_number': p})
+            request_parameters['page_number'] = p
+            resp = self.client.post(self.url_tasklist, request_parameters)
             
             self.assertEqual(resp.status_code, status.HTTP_200_OK)
             self.assertTrue('result' in resp.data)
