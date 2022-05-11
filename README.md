@@ -5,7 +5,7 @@ TODO Application REST API
 
 To run the project Docker Compose is used, and some stuff have to be configured.
 
-Make a copy of the file `Docker/.env_template` in the same directory, named `.env` anc customize the content.
+Make a copy of the file `Docker/.env_template` in the same directory, named `.env` and customize the content.
 
 ## Production
 
@@ -17,7 +17,7 @@ docker compose --file docker-compose.yml up --build
 
 ## Test
 
-In order to run the project in Production mode use the following command from the Docker folder:
+In order to run the project in Test mode use the following command from the Docker folder:
 
 ```
 docker compose --file docker-compose-test.yml up --build
